@@ -1,105 +1,108 @@
+
+require('dotenv').config();
 const { Telegraf } = require('telegraf');
 
-// Ваш токен, замените на свой
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
-// Данные пользователя (например, можно хранить в объекте)
-const userData = {};
-const userState = {}; // Для отслеживания состояния каждого пользователя
+// Главное меню
+const mainMenu = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: 'Добавить продукт', callback_data: 'add_product' }],
+      [{ text: 'Остаток на сегодня', callback_data: 'calories_left' }],
+      [{ text: 'Мои приёмы пищи', callback_data: 'meals' }],
+      [{ text: 'Дополнительно', callback_data: 'extra_menu' }],
+      [{
+        text: 'Открыть Web App',
+        web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' }
+      }]
+    ]
+  }
+};
 
-// Команда /start
+// Дополнительное меню
+const extraMenu = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: 'Справочник продуктов', callback_data: 'product_guide' }],
+      [{ text: 'Советы по питанию', callback_data: 'nutrition_tips' }],
+      [{ text: 'Перерасчёт калорий', callback_data: 'recalculate' }],
+      [{ text: 'Вернуться на главную', callback_data: 'main_menu' }]
+    ]
+  }
+};
+
 bot.start((ctx) => {
-  const userId = ctx.from.id;
-
-  if (!userData[userId]) {
-    // Запрос на данные при первом входе
-    ctx.reply(
-      'Привет! Я помогу тебе отслеживать калории. Для начала введи данные для расчета дневной калорийности.',
-      {
-        reply_markup: {
-          keyboard: [
-            ['Расчет калорийности'],
-          ],
-          resize_keyboard: true, // Подстраивает клавиатуру
-        },
-      }
-    );
-    userState[userId] = 'waiting_for_weight'; // Начинаем с ввода веса
-  } else {
-    // Показываем основное меню, если данные уже введены
-    showMainMenu(ctx);
-  }
-});
-
-// Запрос данных для расчета калорийности
-bot.hears('Расчет калорийности', (ctx) => {
-  const userId = ctx.from.id;
-
-  // Если бот ждет ввода веса
-  if (userState[userId] === 'waiting_for_weight') {
-    ctx.reply('Введите свой вес (кг):');
-    userState[userId] = 'waiting_for_height'; // Переходим к следующему шагу
-  }
-});
-
-// Обработчик ввода текста (для ввода данных)
-bot.on('text', (ctx) => {
-  const userId = ctx.from.id;
-  const userMessage = ctx.message.text;
-
-  if (userState[userId] === 'waiting_for_weight') {
-    // Сохраняем вес
-    userData[userId] = { weight: userMessage };
-    ctx.reply('Теперь введи свой рост (см):');
-    userState[userId] = 'waiting_for_height'; // Переходим к следующему шагу
-  } else if (userState[userId] === 'waiting_for_height') {
-    // Сохраняем рост
-    userData[userId].height = userMessage;
-    ctx.reply('Теперь введи свой возраст (лет):');
-    userState[userId] = 'waiting_for_age'; // Переходим к следующему шагу
-  } else if (userState[userId] === 'waiting_for_age') {
-    // Сохраняем возраст
-    userData[userId].age = userMessage;
-    ctx.reply('Теперь введи свой пол (мужчина/женщина):');
-    userState[userId] = 'waiting_for_gender'; // Переходим к следующему шагу
-  } else if (userState[userId] === 'waiting_for_gender') {
-    // Сохраняем пол
-    userData[userId].gender = userMessage;
-    ctx.reply('Укажи свою активность (низкая/средняя/высокая):');
-    userState[userId] = 'waiting_for_activity'; // Переходим к следующему шагу
-  } else if (userState[userId] === 'waiting_for_activity') {
-    // Сохраняем активность
-    userData[userId].activity = userMessage;
-    ctx.reply('Твои данные для расчета дневной калорийности сохранены! Теперь ты можешь использовать меню.', {
-      reply_markup: {
-        keyboard: [
-          ['Добавить продукт', 'Остаток на сегодня'],
-          ['Мои приемы пищи', 'Дополнительно'],
-        ],
-        resize_keyboard: true,
-      },
-    });
-    userState[userId] = null; // Сброс состояния, переход к обычному меню
-  }
-});
-
-// Функция для показа основного меню
-function showMainMenu(ctx) {
-  ctx.reply(
-    'Теперь ты можешь начать отслеживать калории!',
-    {
-      reply_markup: {
-        keyboard: [
-          ['Добавить продукт', 'Остаток на сегодня'],
-          ['Мои приемы пищи', 'Дополнительно'],
-        ],
-        resize_keyboard: true,
-      },
+  ctx.reply('Привет! Давай рассчитаем твою дневную норму калорий.', {
+    reply_markup: {
+      inline_keyboard: [[{ text: 'Рассчитать калорийность', callback_data: 'calculate_calories' }]]
     }
-  );
-}
-
-// Запуск бота
-bot.launch().then(() => {
-  console.log('Бот запущен!');
+  });
 });
+
+bot.action('calculate_calories', (ctx) => {
+  ctx.reply('Введи свой вес (кг):');
+  ctx.session = { step: 'weight' };
+});
+
+bot.on('text', (ctx) => {
+  if (ctx.session?.step === 'weight') {
+    ctx.session.weight = parseFloat(ctx.message.text);
+    ctx.session.step = 'height';
+    ctx.reply('Введи свой рост (см):');
+  } else if (ctx.session?.step === 'height') {
+    ctx.session.height = parseFloat(ctx.message.text);
+    ctx.session.step = 'age';
+    ctx.reply('Введи свой возраст:');
+  } else if (ctx.session?.step === 'age') {
+    ctx.session.age = parseInt(ctx.message.text);
+    ctx.session.step = 'gender';
+    ctx.reply('Выбери свой пол:', {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: 'Мужской', callback_data: 'male' },
+          { text: 'Женский', callback_data: 'female' }
+        ]]
+      }
+    });
+  }
+});
+
+bot.action(['male', 'female'], (ctx) => {
+  ctx.session.gender = ctx.match[0];
+  ctx.session.step = 'activity';
+  ctx.reply('Выбери уровень активности:', {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: 'Минимальная', callback_data: 'activity_1' },
+        { text: 'Лёгкая', callback_data: 'activity_2' },
+        { text: 'Средняя', callback_data: 'activity_3' },
+        { text: 'Высокая', callback_data: 'activity_4' }
+      ]]
+    }
+  });
+});
+
+bot.action(['activity_1', 'activity_2', 'activity_3', 'activity_4'], (ctx) => {
+  ctx.session.activity = ctx.match[0];
+  // Рассчёт калорийности (упрощённая формула)
+  let bmr = ctx.session.gender === 'male' 
+    ? 88.36 + (13.4 * ctx.session.weight) + (4.8 * ctx.session.height) - (5.7 * ctx.session.age)
+    : 447.6 + (9.2 * ctx.session.weight) + (3.1 * ctx.session.height) - (4.3 * ctx.session.age);
+
+  const activityFactors = { activity_1: 1.2, activity_2: 1.375, activity_3: 1.55, activity_4: 1.725 };
+  ctx.session.dailyCalories = Math.round(bmr * activityFactors[ctx.session.activity]);
+  
+  ctx.reply(`Твоя дневная норма калорий: ${ctx.session.dailyCalories} ккал.`, mainMenu);
+});
+
+bot.action('extra_menu', (ctx) => {
+  ctx.reply('Дополнительное меню:', extraMenu);
+});
+
+bot.action('main_menu', (ctx) => {
+  ctx.reply('Главное меню:', mainMenu);
+});
+
+bot.launch();
+console.log('Бот запущен! 🚀');
