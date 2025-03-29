@@ -35,7 +35,6 @@ const extraMenu = {
 
 // Приветственное сообщение
 bot.start((ctx) => {
-  ctx.session = {};  // Очистка сессии
   ctx.reply('Привет! Я твой умный помощник по питанию. Я помогу тебе рассчитать дневную норму калорий и поделюсь полезными рекомендациями по питанию. 🍏\n\nТы можешь:\n- Использовать команды в этом чате.\n- Или открыть удобное приложение по кнопке ниже.\n\nДля начала нажми на кнопку "Рассчитать калорийность", чтобы начать.', {
     reply_markup: {
       inline_keyboard: [
@@ -51,9 +50,8 @@ bot.start((ctx) => {
 
 // Начало расчета калорийности
 bot.action('calculate_calories', (ctx) => {
-  ctx.session = {};  // Очистка сессии перед началом нового запроса
   ctx.reply('Введи свой возраст (в годах):');
-  ctx.session.step = 'age';  // Начинаем с запроса возраста
+  ctx.session = { step: 'age' };  // Начинаем с запроса возраста
 });
 
 // Обработка текста
@@ -61,36 +59,44 @@ bot.on('text', (ctx) => {
   console.log('Received message:', ctx.message.text);  // Логирование для отладки
 
   if (ctx.session?.step === 'age') {
-    // Сохраняем возраст и идем дальше
-    ctx.session.age = parseInt(ctx.message.text);
-    ctx.session.step = 'weight';
-    console.log('Age set:', ctx.session.age);  // Логируем установленный возраст
-    ctx.reply('Введи свой вес (в кг):');
+    const age = parseInt(ctx.message.text);
+    if (!isNaN(age) && age > 0) {
+      ctx.session.age = age;
+      ctx.session.step = 'weight';
+      ctx.reply('Введи свой вес (в кг):');
+    } else {
+      ctx.reply('Пожалуйста, введи корректный возраст.');
+    }
   } else if (ctx.session?.step === 'weight') {
-    // Сохраняем вес и идем дальше
-    ctx.session.weight = parseFloat(ctx.message.text);
-    ctx.session.step = 'height';
-    console.log('Weight set:', ctx.session.weight);  // Логируем установленный вес
-    ctx.reply('Введи свой рост (в см):');
+    const weight = parseFloat(ctx.message.text);
+    if (!isNaN(weight) && weight > 0) {
+      ctx.session.weight = weight;
+      ctx.session.step = 'height';
+      ctx.reply('Введи свой рост (в см):');
+    } else {
+      ctx.reply('Пожалуйста, введи корректный вес.');
+    }
   } else if (ctx.session?.step === 'height') {
-    // Сохраняем рост и идем дальше
-    ctx.session.height = parseFloat(ctx.message.text);
-    ctx.session.step = 'gender';
-    console.log('Height set:', ctx.session.height);  // Логируем установленный рост
-    ctx.reply('Выбери свой пол:', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Мужской', callback_data: 'male' }],
-          [{ text: 'Женский', callback_data: 'female' }]
-        ]
-      }
-    });
+    const height = parseFloat(ctx.message.text);
+    if (!isNaN(height) && height > 0) {
+      ctx.session.height = height;
+      ctx.session.step = 'gender';
+      ctx.reply('Выбери свой пол:', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Мужской', callback_data: 'male' }],
+            [{ text: 'Женский', callback_data: 'female' }]
+          ]
+        }
+      });
+    } else {
+      ctx.reply('Пожалуйста, введи корректный рост.');
+    }
   }
 });
 
 // Выбор пола
 bot.action(['male', 'female'], (ctx) => {
-  console.log('Gender selected:', ctx.match[0]);  // Логируем выбранный пол
   ctx.session.gender = ctx.match[0];
   ctx.session.step = 'activity';
   ctx.reply('Выбери уровень активности:', {
@@ -106,9 +112,8 @@ bot.action(['male', 'female'], (ctx) => {
 
 // Выбор уровня активности
 bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
-  console.log('Activity level selected:', ctx.match[0]);  // Логируем выбранный уровень активности
   ctx.session.activity = ctx.match[0];
-  
+
   // Рассчитываем калории по упрощенной формуле
   let bmr = ctx.session.gender === 'male'
     ? 88.36 + (13.4 * ctx.session.weight) + (4.8 * ctx.session.height) - (5.7 * ctx.session.age)
@@ -123,6 +128,22 @@ bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
   ctx.session.dailyCalories = Math.round(bmr * activityFactors[ctx.session.activity]);
 
   ctx.reply(`Твоя дневная норма калорий: ${ctx.session.dailyCalories} ккал.`, mainMenu);
+});
+
+// Обработка кнопки "Дополнительно"
+bot.action('extra_menu', (ctx) => {
+  ctx.reply('Дополнительное меню:', extraMenu);
+});
+
+// Обработка кнопки "Перерасчёт нормы"
+bot.action('recalculate', (ctx) => {
+  ctx.reply('Для перерасчёта введи свой новый возраст, вес, рост, пол и уровень активности.');
+  ctx.session = { step: 'age' };  // Начинаем заново
+});
+
+// Обработка кнопки "Вернуться на главную"
+bot.action('main_menu', (ctx) => {
+  ctx.reply('Главное меню:', mainMenu);
 });
 
 // Запуск бота
