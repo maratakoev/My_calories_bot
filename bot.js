@@ -1,7 +1,10 @@
-const { Telegraf } = require('telegraf');
+const { Telegraf, session } = require('telegraf');
 
-// Замените токен на ваш
+// Вставьте свой токен напрямую
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
+
+// Подключаем session middleware для сохранения состояния диалога
+bot.use(session());
 
 // Главное меню
 const mainMenu = {
@@ -33,82 +36,35 @@ const extraMenu = {
   }
 };
 
-// Приветственное сообщение
-bot.start((ctx) => {
-  ctx.reply('Привет! Я твой умный помощник по питанию. Я помогу тебе рассчитать дневную норму калорий и поделюсь полезными рекомендациями по питанию. 🍏\n\nТы можешь:\n- Использовать команды в этом чате.\n- Или открыть удобное приложение по кнопке ниже.\n\nДля начала нажми на кнопку "Расчет дневной калорийности", чтобы начать.', {
+// Функции для каждого шага
+function askAge(ctx) {
+  ctx.reply('Введи свой возраст (в годах):');
+  ctx.session.step = 'age';
+}
+
+function askWeight(ctx) {
+  ctx.reply('Введи свой вес (в кг):');
+  ctx.session.step = 'weight';
+}
+
+function askHeight(ctx) {
+  ctx.reply('Введи свой рост (в см):');
+  ctx.session.step = 'height';
+}
+
+function askGender(ctx) {
+  ctx.reply('Выбери свой пол:', {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Рассчитать калорийность', callback_data: 'calculate_calories' }],
-        [{
-          text: 'Открыть Web App',
-          web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' }
-        }]
+        [{ text: 'Мужской', callback_data: 'male' }],
+        [{ text: 'Женский', callback_data: 'female' }]
       ]
     }
   });
-});
+  ctx.session.step = 'gender';
+}
 
-// Начало расчета калорийности
-bot.action('calculate_calories', (ctx) => {
-  ctx.reply('Введи свой возраст (в годах):');
-  ctx.session = { step: 'age' };  // Начинаем с запроса возраста
-});
-
-// Обработка текста
-bot.on('text', (ctx) => {
-  console.log('Received message:', ctx.message.text);  // Логирование для отладки
-
-  if (ctx.session?.step === 'age') {
-    // Проверяем, что введено число
-    const age = parseInt(ctx.message.text);
-    if (isNaN(age) || age <= 0) {
-      ctx.reply('Пожалуйста, введи корректный возраст.');
-      return; // Ожидаем корректный ввод
-    }
-
-    ctx.session.age = age;
-    ctx.session.step = 'weight';
-    console.log('Age set:', ctx.session.age);  // Логируем установленный возраст
-    ctx.reply('Введи свой вес (в кг):');
-  } else if (ctx.session?.step === 'weight') {
-    // Проверка на правильный ввод веса
-    const weight = parseFloat(ctx.message.text);
-    if (isNaN(weight) || weight <= 0) {
-      ctx.reply('Пожалуйста, введи корректный вес.');
-      return;
-    }
-
-    ctx.session.weight = weight;
-    ctx.session.step = 'height';
-    console.log('Weight set:', ctx.session.weight);  // Логируем установленный вес
-    ctx.reply('Введи свой рост (в см):');
-  } else if (ctx.session?.step === 'height') {
-    // Проверка на правильный ввод роста
-    const height = parseFloat(ctx.message.text);
-    if (isNaN(height) || height <= 0) {
-      ctx.reply('Пожалуйста, введи корректный рост.');
-      return;
-    }
-
-    ctx.session.height = height;
-    ctx.session.step = 'gender';
-    console.log('Height set:', ctx.session.height);  // Логируем установленный рост
-    ctx.reply('Выбери свой пол:', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Мужской', callback_data: 'male' }],
-          [{ text: 'Женский', callback_data: 'female' }]
-        ]
-      }
-    });
-  }
-});
-
-// Выбор пола
-bot.action(['male', 'female'], (ctx) => {
-  console.log('Gender selected:', ctx.match[0]);  // Логируем выбранный пол
-  ctx.session.gender = ctx.match[0];
-  ctx.session.step = 'activity';
+function askActivity(ctx) {
   ctx.reply('Выбери уровень активности:', {
     reply_markup: {
       inline_keyboard: [
@@ -118,14 +74,78 @@ bot.action(['male', 'female'], (ctx) => {
       ]
     }
   });
+  ctx.session.step = 'activity';
+}
+
+// Приветственное сообщение
+bot.start((ctx) => {
+  ctx.reply(
+    'Привет! Я твой умный помощник по питанию. Я помогу тебе рассчитать дневную норму калорий и поделюсь полезными рекомендациями по питанию. 🍏\n\nТы можешь:\n- Использовать команды в этом чате.\n- Или открыть удобное приложение по кнопке ниже.\n\nДля начала нажми на кнопку "Рассчитать калорийность", чтобы начать.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Рассчитать калорийность', callback_data: 'calculate_calories' }],
+          [{
+            text: 'Открыть Web App',
+            web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' }
+          }]
+        ]
+      }
+    }
+  );
 });
 
-// Выбор уровня активности
+// Начало расчета калорийности
+bot.action('calculate_calories', (ctx) => {
+  askAge(ctx);
+});
+
+// Обработка текстовых сообщений для ввода данных
+bot.on('text', (ctx) => {
+  console.log('Получено сообщение:', ctx.message.text);
+
+  if (ctx.session?.step === 'age') {
+    const age = parseInt(ctx.message.text);
+    if (isNaN(age) || age <= 0) {
+      return ctx.reply('Пожалуйста, введи корректный возраст.');
+    }
+    ctx.session.age = age;
+    console.log('Возраст установлен:', ctx.session.age);
+    return askWeight(ctx);
+  } 
+  else if (ctx.session?.step === 'weight') {
+    const weight = parseFloat(ctx.message.text);
+    if (isNaN(weight) || weight <= 0) {
+      return ctx.reply('Пожалуйста, введи корректный вес.');
+    }
+    ctx.session.weight = weight;
+    console.log('Вес установлен:', ctx.session.weight);
+    return askHeight(ctx);
+  } 
+  else if (ctx.session?.step === 'height') {
+    const height = parseFloat(ctx.message.text);
+    if (isNaN(height) || height <= 0) {
+      return ctx.reply('Пожалуйста, введи корректный рост.');
+    }
+    ctx.session.height = height;
+    console.log('Рост установлен:', ctx.session.height);
+    return askGender(ctx);
+  }
+});
+
+// Выбор пола
+bot.action(['male', 'female'], (ctx) => {
+  console.log('Выбран пол:', ctx.match[0]);
+  ctx.session.gender = ctx.match[0];
+  return askActivity(ctx);
+});
+
+// Выбор уровня активности и расчет калорий
 bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
-  console.log('Activity level selected:', ctx.match[0]);  // Логируем выбранный уровень активности
+  console.log('Выбран уровень активности:', ctx.match[0]);
   ctx.session.activity = ctx.match[0];
-  
-  // Рассчитываем калории по упрощенной формуле
+
+  // Упрощенная формула расчета BMR
   let bmr = ctx.session.gender === 'male'
     ? 88.36 + (13.4 * ctx.session.weight) + (4.8 * ctx.session.height) - (5.7 * ctx.session.age)
     : 447.6 + (9.2 * ctx.session.weight) + (3.1 * ctx.session.height) - (4.3 * ctx.session.age);
@@ -137,7 +157,6 @@ bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
   };
 
   ctx.session.dailyCalories = Math.round(bmr * activityFactors[ctx.session.activity]);
-
   ctx.reply(`Твоя дневная норма калорий: ${ctx.session.dailyCalories} ккал.`, mainMenu);
 });
 
@@ -149,7 +168,7 @@ bot.action('extra_menu', (ctx) => {
 // Обработка кнопки "Перерасчёт нормы"
 bot.action('recalculate', (ctx) => {
   ctx.reply('Для перерасчёта введи свой новый возраст, вес, рост, пол и уровень активности.');
-  ctx.session = { step: 'age' };  // Начинаем заново
+  askAge(ctx);
 });
 
 // Обработка кнопки "Вернуться на главную"
