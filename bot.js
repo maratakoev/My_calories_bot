@@ -7,7 +7,7 @@ bot.use(session({
   defaultSession: () => ({ step: null })
 }));
 
-// Главное меню
+// Главное менюф
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
