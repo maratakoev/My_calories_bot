@@ -1,12 +1,11 @@
-
-// Замените токен на ваш
 import { Telegraf } from 'telegraf';
-import session from 'telegraf/session';
+import { session } from 'telegraf';  // Это встроенный middleware для сессий
 
+// Инициализация бота с вашим токеном
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
 // Используем сессии для хранения данных пользователей
-bot.use(session());
+bot.use(session());  // Подключаем сессионный middleware
 
 // Состояния
 const STATES = {
@@ -14,21 +13,19 @@ const STATES = {
   AGE: 'age',
 };
 
-// Запуск бота и приветствие
+// Запуск бота и приветственное сообщение
 bot.start((ctx) => {
-  const chatId = ctx.chat.id;
   ctx.session = { state: STATES.NAME };  // Инициализируем состояние пользователя
   return ctx.reply('Привет! Как тебя зовут?');
 });
 
 // Обработка ввода имени
 bot.on('text', (ctx) => {
-  const chatId = ctx.chat.id;
   const userState = ctx.session.state;
 
   if (userState === STATES.NAME) {
     ctx.session.name = ctx.message.text;  // Сохраняем имя
-    ctx.session.state = STATES.AGE;      // Переходим к следующему шагу
+    ctx.session.state = STATES.AGE;      // Переход к следующему состоянию
     return ctx.reply(`Приятно познакомиться, ${ctx.session.name}! Сколько тебе лет?`);
   }
 
@@ -44,4 +41,5 @@ bot.command('cancel', (ctx) => {
   return ctx.reply('Операция отменена.');
 });
 
+// Запуск бота
 bot.launch();
