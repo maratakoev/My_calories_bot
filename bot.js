@@ -53,7 +53,7 @@ bot.start((ctx) => {
 bot.action('calculate_calories', (ctx) => {
   ctx.session = {};  // Очистка сессии перед началом нового запроса
   ctx.reply('Введи свой возраст (в годах):');
-  ctx.session = { step: 'age' };  // Начинаем с запроса возраста
+  ctx.session.step = 'age';  // Начинаем с запроса возраста
 });
 
 // Обработка текста
@@ -67,11 +67,13 @@ bot.on('text', (ctx) => {
     console.log('Age set:', ctx.session.age);  // Логируем установленный возраст
     ctx.reply('Введи свой вес (в кг):');
   } else if (ctx.session?.step === 'weight') {
+    // Сохраняем вес и идем дальше
     ctx.session.weight = parseFloat(ctx.message.text);
     ctx.session.step = 'height';
     console.log('Weight set:', ctx.session.weight);  // Логируем установленный вес
     ctx.reply('Введи свой рост (в см):');
   } else if (ctx.session?.step === 'height') {
+    // Сохраняем рост и идем дальше
     ctx.session.height = parseFloat(ctx.message.text);
     ctx.session.step = 'gender';
     console.log('Height set:', ctx.session.height);  // Логируем установленный рост
