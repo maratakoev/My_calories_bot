@@ -3,13 +3,14 @@ const { Telegraf } = require('telegraf');
 // Ваш токен, замените на свой
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
-// Данные пользователя (пример, реальную базу данных можно использовать вместо объекта)
+// Данные пользователя (например, можно хранить в объекте)
 const userData = {};
+const userState = {}; // Для отслеживания состояния каждого пользователя
 
 // Команда /start
 bot.start((ctx) => {
   const userId = ctx.from.id;
-  
+
   if (!userData[userId]) {
     // Запрос на данные при первом входе
     ctx.reply(
@@ -23,13 +24,66 @@ bot.start((ctx) => {
         },
       }
     );
+    userState[userId] = 'waiting_for_weight'; // Начинаем с ввода веса
   } else {
     // Показываем основное меню, если данные уже введены
     showMainMenu(ctx);
   }
 });
 
-// Основное меню
+// Запрос данных для расчета калорийности
+bot.hears('Расчет калорийности', (ctx) => {
+  const userId = ctx.from.id;
+
+  // Если бот ждет ввода веса
+  if (userState[userId] === 'waiting_for_weight') {
+    ctx.reply('Введите свой вес (кг):');
+    userState[userId] = 'waiting_for_height'; // Переходим к следующему шагу
+  }
+});
+
+// Обработчик ввода текста (для ввода данных)
+bot.on('text', (ctx) => {
+  const userId = ctx.from.id;
+  const userMessage = ctx.message.text;
+
+  if (userState[userId] === 'waiting_for_weight') {
+    // Сохраняем вес
+    userData[userId] = { weight: userMessage };
+    ctx.reply('Теперь введи свой рост (см):');
+    userState[userId] = 'waiting_for_height'; // Переходим к следующему шагу
+  } else if (userState[userId] === 'waiting_for_height') {
+    // Сохраняем рост
+    userData[userId].height = userMessage;
+    ctx.reply('Теперь введи свой возраст (лет):');
+    userState[userId] = 'waiting_for_age'; // Переходим к следующему шагу
+  } else if (userState[userId] === 'waiting_for_age') {
+    // Сохраняем возраст
+    userData[userId].age = userMessage;
+    ctx.reply('Теперь введи свой пол (мужчина/женщина):');
+    userState[userId] = 'waiting_for_gender'; // Переходим к следующему шагу
+  } else if (userState[userId] === 'waiting_for_gender') {
+    // Сохраняем пол
+    userData[userId].gender = userMessage;
+    ctx.reply('Укажи свою активность (низкая/средняя/высокая):');
+    userState[userId] = 'waiting_for_activity'; // Переходим к следующему шагу
+  } else if (userState[userId] === 'waiting_for_activity') {
+    // Сохраняем активность
+    userData[userId].activity = userMessage;
+    ctx.reply('Твои данные для расчета дневной калорийности сохранены! Теперь ты можешь использовать меню.', {
+      reply_markup: {
+        keyboard: [
+          ['Добавить продукт', 'Остаток на сегодня'],
+          ['Мои приемы пищи', 'Дополнительно'],
+        ],
+        resize_keyboard: true,
+      },
+    });
+    userState[userId] = null; // Сброс состояния, переход к обычному меню
+  }
+});
+
+// Функция для показа основного меню
 function showMainMenu(ctx) {
   ctx.reply(
     'Теперь ты можешь начать отслеживать калории!',
@@ -44,119 +98,6 @@ function showMainMenu(ctx) {
     }
   );
 }
-
-// Кнопка "Дополнительно"
-bot.hears('Дополнительно', (ctx) => {
-  ctx.reply(
-    'Выбери одно из дополнительных действий:',
-    {
-      reply_markup: {
-        keyboard: [
-          ['Справочник продуктов', 'Советы по питанию'],
-          ['Настройки', 'Перерасчет дневной калорийности'],
-          ['Вернуться на главную'],
-        ],
-        resize_keyboard: true,
-      },
-    }
-  );
-});
-
-// Кнопка "Перерасчет дневной калорийности"
-bot.hears('Перерасчет дневной калорийности', (ctx) => {
-  const userId = ctx.from.id;
-  
-  ctx.reply('Давай обновим твои данные для перерасчета дневной калорийности. Введи свой новый вес (кг):');
-  
-  // Запрос на новый вес
-  bot.on('text', (ctx) => {
-    const newWeight = ctx.message.text;
-    userData[userId].weight = newWeight;  // Обновляем вес
-
-    ctx.reply('Введи свой новый рост (см):');
-    bot.on('text', (ctx) => {
-      const newHeight = ctx.message.text;
-      userData[userId].height = newHeight;  // Обновляем рост
-
-      // После ввода всех данных, показываем основное меню с обновленными данными
-      ctx.reply('Твои данные обновлены! Теперь ты можешь продолжить использовать меню.', {
-        reply_markup: {
-          keyboard: [
-            ['Добавить продукт', 'Остаток на сегодня'],
-            ['Мои приемы пищи', 'Дополнительно'],
-          ],
-          resize_keyboard: true,
-        },
-      });
-    });
-  });
-});
-
-// Обработчик для кнопки "Расчет калорийности"
-bot.hears('Расчет калорийности', (ctx) => {
-  const userId = ctx.from.id;
-  
-  ctx.reply('Для расчета калорийности введи свой рост (см):');
-  
-  bot.on('text', (ctx) => {
-    const height = ctx.message.text;
-    userData[userId] = { height };
-
-    ctx.reply('Теперь введи свой вес (кг):');
-    bot.on('text', (ctx) => {
-      const weight = ctx.message.text;
-      userData[userId].weight = weight;
-
-      ctx.reply('Введи свой возраст (лет):');
-      bot.on('text', (ctx) => {
-        const age = ctx.message.text;
-        userData[userId].age = age;
-
-        ctx.reply('Теперь введи свой пол (мужчина/женщина):');
-        bot.on('text', (ctx) => {
-          const gender = ctx.message.text;
-          userData[userId].gender = gender;
-
-          ctx.reply('Укажи свою активность (низкая/средняя/высокая):');
-          bot.on('text', (ctx) => {
-            const activity = ctx.message.text;
-            userData[userId].activity = activity;
-
-            // Здесь можно добавить расчет калорий по введенным данным
-            ctx.reply('Твои данные для расчета дневной калорийности сохранены! Теперь ты можешь использовать меню.', {
-              reply_markup: {
-                keyboard: [
-                  ['Добавить продукт', 'Остаток на сегодня'],
-                  ['Мои приемы пищи', 'Дополнительно'],
-                ],
-                resize_keyboard: true,
-              },
-            });
-          });
-        });
-      });
-    });
-  });
-});
-
-// Команда для открытия Web App
-bot.start((ctx) => {
-  ctx.reply(
-    'Привет! Нажми на кнопку ниже, чтобы открыть наш Web App!',
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: 'Открыть Web App',
-              web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' } // Замените на ваш URL
-            }
-          ]
-        ]
-      }
-    }
-  );
-});
 
 // Запуск бота
 bot.launch().then(() => {
