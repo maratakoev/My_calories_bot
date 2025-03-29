@@ -97,7 +97,7 @@ bot.start((ctx) => {
 
 // Начало расчета калорийности
 bot.action('calculate_calories', (ctx) => {
-  ctx.session.step = 'age'; // Убедитесь, что сессия инициализирована
+  ctx.session.step = 'age'; // Начинаем с запроса возраста
   askAge(ctx);
 });
 
@@ -106,31 +106,19 @@ bot.on('text', (ctx) => {
   console.log('Получено сообщение:', ctx.message.text);
 
   if (ctx.session?.step === 'age') {
-    const age = parseInt(ctx.message.text);
-    if (isNaN(age) || age <= 0) {
-      return ctx.reply('Пожалуйста, введи корректный возраст.');
-    }
-    ctx.session.age = age;
+    ctx.session.age = parseInt(ctx.message.text);  // Просто сохраняем возраст
     console.log('Возраст установлен:', ctx.session.age);
-    return askWeight(ctx);
+    askWeight(ctx);  // Переходим к следующему шагу
   } 
   else if (ctx.session?.step === 'weight') {
-    const weight = parseFloat(ctx.message.text);
-    if (isNaN(weight) || weight <= 0) {
-      return ctx.reply('Пожалуйста, введи корректный вес.');
-    }
-    ctx.session.weight = weight;
+    ctx.session.weight = parseFloat(ctx.message.text);  // Сохраняем вес
     console.log('Вес установлен:', ctx.session.weight);
-    return askHeight(ctx);
+    askHeight(ctx);  // Переходим к следующему шагу
   } 
   else if (ctx.session?.step === 'height') {
-    const height = parseFloat(ctx.message.text);
-    if (isNaN(height) || height <= 0) {
-      return ctx.reply('Пожалуйста, введи корректный рост.');
-    }
-    ctx.session.height = height;
+    ctx.session.height = parseFloat(ctx.message.text);  // Сохраняем рост
     console.log('Рост установлен:', ctx.session.height);
-    return askGender(ctx);
+    askGender(ctx);  // Переходим к следующему шагу
   }
 });
 
@@ -138,7 +126,7 @@ bot.on('text', (ctx) => {
 bot.action(['male', 'female'], (ctx) => {
   console.log('Выбран пол:', ctx.match[0]);
   ctx.session.gender = ctx.match[0];
-  return askActivity(ctx);
+  askActivity(ctx);  // Переходим к следующему шагу
 });
 
 // Выбор уровня активности и расчет калорий
@@ -169,6 +157,7 @@ bot.action('extra_menu', (ctx) => {
 // Обработка кнопки "Перерасчёт нормы"
 bot.action('recalculate', (ctx) => {
   ctx.reply('Для перерасчёта введи свой новый возраст, вес, рост, пол и уровень активности.');
+  ctx.session = {};  // Начинаем заново
   askAge(ctx);
 });
 
