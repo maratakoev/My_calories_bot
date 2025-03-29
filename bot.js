@@ -1,7 +1,6 @@
-
-require('dotenv').config();
 const { Telegraf } = require('telegraf');
 
+// Вставьте свой токен напрямую здесь
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
 // Главное меню
