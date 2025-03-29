@@ -1,10 +1,11 @@
 const { Telegraf, session } = require('telegraf');
 
-// Замените токен на ваш
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
 // Инициализация сессии
-bot.use(session());
+bot.use(session({
+  defaultSession: () => ({ step: null })
+}));
 
 // Главное меню
 const mainMenu = {
@@ -24,112 +25,143 @@ const mainMenu = {
 
 // Приветственное сообщение
 bot.start((ctx) => {
-  ctx.reply('Привет! Я твой умный помощник по питанию. Я помогу тебе рассчитать дневную норму калорий и поделюсь полезными рекомендациями. 🍏\n\nТы можешь:\n- Использовать команды в этом чате.\n- Или открыть удобное приложение по кнопке ниже.\n\nДля начала нажми на кнопку "Рассчитать калорийность", чтобы начать.', {
+  ctx.reply(
+    'Привет! Я твой умный помощник по питанию. 🍏\n\n' +
+    'Я помогу рассчитать дневную норму калорий.\n\n' +
+    'Нажми кнопку ниже, чтобы начать.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Рассчитать калорийность', callback_data: 'calculate_calories' }],
+          [{
+            text: 'Открыть Web App',
+            web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' }
+          }]
+        ]
+      }
+    }
+  );
+});
+
+// Запуск диалога расчёта калорий
+bot.action('calculate_calories', (ctx) => {
+  ctx.session = { step: 'age' }; // Начинаем с запроса возраста
+  return ctx.reply('Введи свой возраст (например, 25):');
+});
+
+// Обработка возраста
+bot.hears(/^\d+$/, (ctx) => {
+  if (ctx.session?.step !== 'age') return;
+
+  const age = parseInt(ctx.message.text);
+  if (age < 10 || age > 120) {
+    return ctx.reply('❌ Введи реальный возраст (от 10 до 120 лет).');
+  }
+
+  ctx.session.age = age;
+  ctx.session.step = 'weight'; // Переходим к весу
+  return ctx.reply('Теперь введи свой вес в кг (например, 70):');
+});
+
+// Обработка веса
+bot.hears(/^\d+$/, (ctx) => {
+  if (ctx.session?.step !== 'weight') return;
+
+  const weight = parseFloat(ctx.message.text);
+  if (weight < 30 || weight > 300) {
+    return ctx.reply('❌ Введи реальный вес (от 30 до 300 кг).');
+  }
+
+  ctx.session.weight = weight;
+  ctx.session.step = 'height'; // Переходим к росту
+  return ctx.reply('Теперь введи рост в см (например, 175):');
+});
+
+// Обработка роста
+bot.hears(/^\d+$/, (ctx) => {
+  if (ctx.session?.step !== 'height') return;
+
+  const height = parseFloat(ctx.message.text);
+  if (height < 100 || height > 250) {
+    return ctx.reply('❌ Введи реальный рост (от 100 до 250 см).');
+  }
+
+  ctx.session.height = height;
+  ctx.session.step = 'gender'; // Переходим к полу
+  return ctx.reply('Выбери пол:', {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Рассчитать калорийность', callback_data: 'calculate_calories' }],
-        [{
-          text: 'Открыть Web App',
-          web_app: { url: 'https://velvety-marigold-d0d59a.netlify.app' }
-        }]
+        [{ text: 'Мужской ♂️', callback_data: 'male' }],
+        [{ text: 'Женский ♀️', callback_data: 'female' }]
       ]
     }
   });
 });
 
-// Обработчик для расчета калорий
-bot.action('calculate_calories', (ctx) => {
-  ctx.session = { step: 'age' };
-  return ctx.reply('Введи свой возраст (в годах):');
-});
-
-// Обработчик ввода возраста
-bot.on('text', (ctx) => {
-  if (ctx.session?.step === 'age') {
-    const age = parseInt(ctx.message.text);
-    if (!isNaN(age) && age > 0) {
-      ctx.session.age = age;
-      ctx.session.step = 'weight';
-      return ctx.reply('Введи свой вес (в кг):');
-    }
-    return ctx.reply('Пожалуйста, введи корректный возраст.');
-  }
-});
-
-// Обработчик ввода веса
-bot.on('text', (ctx) => {
-  if (ctx.session?.step === 'weight') {
-    const weight = parseFloat(ctx.message.text);
-    if (!isNaN(weight) && weight > 0) {
-      ctx.session.weight = weight;
-      ctx.session.step = 'height';
-      return ctx.reply('Введи свой рост (в см):');
-    }
-    return ctx.reply('Пожалуйста, введи корректный вес.');
-  }
-});
-
-// Обработчик ввода роста
-bot.on('text', (ctx) => {
-  if (ctx.session?.step === 'height') {
-    const height = parseFloat(ctx.message.text);
-    if (!isNaN(height) && height > 0) {
-      ctx.session.height = height;
-      ctx.session.step = 'gender';
-      return ctx.reply('Выбери свой пол:', {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Мужской', callback_data: 'male' }],
-            [{ text: 'Женский', callback_data: 'female' }]
-          ]
-        }
-      });
-    }
-    return ctx.reply('Пожалуйста, введи корректный рост.');
-  }
-});
-
-// Обработчик выбора пола
+// Обработка выбора пола
 bot.action(['male', 'female'], (ctx) => {
-  if (ctx.session?.step === 'gender') {
-    ctx.session.gender = ctx.callbackQuery.data;
-    ctx.session.step = 'activity';
-    return ctx.reply('Выбери уровень активности:', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Низкий', callback_data: 'activity_1' }],
-          [{ text: 'Средний', callback_data: 'activity_2' }],
-          [{ text: 'Высокий', callback_data: 'activity_3' }]
-        ]
-      }
-    });
-  }
+  if (ctx.session?.step !== 'gender') return;
+
+  ctx.session.gender = ctx.callbackQuery.data;
+  ctx.session.step = 'activity'; // Переходим к активности
+  return ctx.reply('Выбери уровень активности:', {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '🛌 Низкий (офисная работа)', callback_data: 'activity_1' }],
+        [{ text: '🚶‍♂️ Средний (тренировки 1-3 раза/неделю)', callback_data: 'activity_2' }],
+        [{ text: '🏋️‍♂️ Высокий (тренировки 5+ раз/неделю)', callback_data: 'activity_3' }]
+      ]
+    }
+  });
 });
 
-// Обработчик выбора активности
+// Обработка выбора активности и расчёт калорий
 bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
-  if (ctx.session?.step === 'activity') {
-    const activity = ctx.callbackQuery.data;
-    ctx.session.activity = activity;
+  if (ctx.session?.step !== 'activity') return;
 
-    // Рассчитываем калории
-    let bmr = ctx.session.gender === 'male'
-      ? 88.36 + (13.4 * ctx.session.weight) + (4.8 * ctx.session.height) - (5.7 * ctx.session.age)
-      : 447.6 + (9.2 * ctx.session.weight) + (3.1 * ctx.session.height) - (4.3 * ctx.session.age);
+  const activity = ctx.callbackQuery.data;
+  const { age, weight, height, gender } = ctx.session;
 
-    const activityFactors = {
-      activity_1: 1.2,
-      activity_2: 1.375,
-      activity_3: 1.55
-    };
-
-    ctx.session.dailyCalories = Math.round(bmr * activityFactors[ctx.session.activity]);
-
-    // Отправляем результат
-    return ctx.reply(`Твоя дневная норма калорий: ${ctx.session.dailyCalories} ккал.`, mainMenu);
+  // Формула Миффлина-Сан Жеора (более точная, чем Харриса-Бенедикта)
+  let bmr;
+  if (gender === 'male') {
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  } else {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
   }
+
+  // Коэффициенты активности
+  const activityFactors = {
+    activity_1: 1.2,    // Минимальная активность
+    activity_2: 1.375,  // Небольшая активность
+    activity_3: 1.55    // Умеренная активность
+  };
+
+  const dailyCalories = Math.round(bmr * activityFactors[activity]);
+  ctx.session.dailyCalories = dailyCalories;
+  ctx.session.step = null; // Завершаем диалог
+
+  // Форматируем результат
+  const resultText = 
+    `✅ Расчёт завершён!\n\n` +
+    `▪ Возраст: ${age} лет\n` +
+    `▪ Вес: ${weight} кг\n` +
+    `▪ Рост: ${height} см\n` +
+    `▪ Пол: ${gender === 'male' ? 'мужской ♂️' : 'женский ♀️'}\n` +
+    `\n🔥 Ваша дневная норма: <b>${dailyCalories} ккал</b>`;
+
+  return ctx.replyWithHTML(resultText, mainMenu);
+});
+
+// Обработка любых других сообщений
+bot.on('message', (ctx) => {
+  if (ctx.session?.step) {
+    return ctx.reply('Пожалуйста, ответь на текущий вопрос.');
+  }
+  return ctx.reply('Используй кнопки меню для навигации.', mainMenu);
 });
 
 // Запуск бота
-bot.launch();
-console.log('Бот запущен! 🚀');
+bot.launch()
+  .then(() => console.log('Бот запущен 🚀'))
+  .catch((err) => console.error('Ошибка запуска:', err));
