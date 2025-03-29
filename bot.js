@@ -1,6 +1,6 @@
-const { Telegraf } = require('telegraf');
+import { Telegraf } from 'telegraf';
 
-const bot = new Telegraf('YOUR_BOT_TOKEN');
+const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
 // Хранилище для информации о пользователе
 const userData = {};
