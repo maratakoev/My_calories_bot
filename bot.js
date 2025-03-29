@@ -56,49 +56,36 @@ bot.action('calculate_calories', (ctx) => {
 
 // Обработка текста
 bot.on('text', (ctx) => {
-  console.log('Received message:', ctx.message.text);  // Логирование для отладки
+  if (ctx.session.step === 'age') {
+    ctx.session.age = ctx.message.text;  // Сохраняем введенный возраст
+    ctx.session.step = 'weight'; // Переходим к следующему шагу
+    ctx.reply('Введи свой вес (в кг):');
+  }
 
-  if (ctx.session?.step === 'age') {
-    const age = parseInt(ctx.message.text);
-    if (!isNaN(age) && age > 0) {
-      ctx.session.age = age;
-      ctx.session.step = 'weight';
-      ctx.reply('Введи свой вес (в кг):');
-    } else {
-      ctx.reply('Пожалуйста, введи корректный возраст.');
-    }
-  } else if (ctx.session?.step === 'weight') {
-    const weight = parseFloat(ctx.message.text);
-    if (!isNaN(weight) && weight > 0) {
-      ctx.session.weight = weight;
-      ctx.session.step = 'height';
-      ctx.reply('Введи свой рост (в см):');
-    } else {
-      ctx.reply('Пожалуйста, введи корректный вес.');
-    }
-  } else if (ctx.session?.step === 'height') {
-    const height = parseFloat(ctx.message.text);
-    if (!isNaN(height) && height > 0) {
-      ctx.session.height = height;
-      ctx.session.step = 'gender';
-      ctx.reply('Выбери свой пол:', {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Мужской', callback_data: 'male' }],
-            [{ text: 'Женский', callback_data: 'female' }]
-          ]
-        }
-      });
-    } else {
-      ctx.reply('Пожалуйста, введи корректный рост.');
-    }
+  if (ctx.session.step === 'weight') {
+    ctx.session.weight = ctx.message.text;  // Сохраняем введенный вес
+    ctx.session.step = 'height'; // Переходим к следующему шагу
+    ctx.reply('Введи свой рост (в см):');
+  }
+
+  if (ctx.session.step === 'height') {
+    ctx.session.height = ctx.message.text;  // Сохраняем введенный рост
+    ctx.session.step = 'gender'; // Переходим к следующему шагу
+    ctx.reply('Выбери свой пол:', {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Мужской', callback_data: 'male' }],
+          [{ text: 'Женский', callback_data: 'female' }]
+        ]
+      }
+    });
   }
 });
 
 // Выбор пола
 bot.action(['male', 'female'], (ctx) => {
-  ctx.session.gender = ctx.match[0];
-  ctx.session.step = 'activity';
+  ctx.session.gender = ctx.match[0];  // Сохраняем выбранный пол
+  ctx.session.step = 'activity'; // Переходим к следующему шагу
   ctx.reply('Выбери уровень активности:', {
     reply_markup: {
       inline_keyboard: [
@@ -112,7 +99,7 @@ bot.action(['male', 'female'], (ctx) => {
 
 // Выбор уровня активности
 bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
-  ctx.session.activity = ctx.match[0];
+  ctx.session.activity = ctx.match[0];  // Сохраняем выбранный уровень активности
 
   // Рассчитываем калории по упрощенной формуле
   let bmr = ctx.session.gender === 'male'
