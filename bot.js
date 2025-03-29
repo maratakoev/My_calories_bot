@@ -57,15 +57,36 @@ bot.action('calculate_calories', (ctx) => {
 // Обработка текста
 bot.on('text', (ctx) => {
   if (ctx.session?.step === 'age') {
-    ctx.session.age = parseInt(ctx.message.text);
+    // Проверяем, что введено число
+    const age = parseInt(ctx.message.text);
+    if (isNaN(age) || age <= 0) {
+      ctx.reply('Пожалуйста, введи корректный возраст.');
+      return; // Ожидаем корректный ввод
+    }
+
+    ctx.session.age = age;
     ctx.session.step = 'weight';
     ctx.reply('Введи свой вес (в кг):');
   } else if (ctx.session?.step === 'weight') {
-    ctx.session.weight = parseFloat(ctx.message.text);
+    // Проверка на правильный ввод веса
+    const weight = parseFloat(ctx.message.text);
+    if (isNaN(weight) || weight <= 0) {
+      ctx.reply('Пожалуйста, введи корректный вес.');
+      return;
+    }
+
+    ctx.session.weight = weight;
     ctx.session.step = 'height';
     ctx.reply('Введи свой рост (в см):');
   } else if (ctx.session?.step === 'height') {
-    ctx.session.height = parseFloat(ctx.message.text);
+    // Проверка на правильный ввод роста
+    const height = parseFloat(ctx.message.text);
+    if (isNaN(height) || height <= 0) {
+      ctx.reply('Пожалуйста, введи корректный рост.');
+      return;
+    }
+
+    ctx.session.height = height;
     ctx.session.step = 'gender';
     ctx.reply('Выбери свой пол:', {
       reply_markup: {
