@@ -1,0 +1,122 @@
+Бот запущен!
+(node:39716) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Бот запущен!
+(node:40373) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 404: Not Found
+    at Telegram.callApi (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Telegraf.launch (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/telegraf.js:188:78) {
+  response: { ok: false, error_code: 404, description: 'Not Found' },
+  on: { method: 'getMe', payload: {} }
+}
+
+Node.js v22.11.0
+Бот запущен!
+(node:40467) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Бот запущен!
+(node:40517) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 409: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+    at Telegram.callApi (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async [Symbol.asyncIterator] (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:30:33)
+    at async Polling.loop (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:73:30)
+    at async Telegraf.launch (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/telegraf.js:194:13) {
+  response: {
+    ok: false,
+    error_code: 409,
+    description: 'Conflict: terminated by other getUpdates request; make sure that only one bot instance is running'
+  },
+  on: {
+    method: 'getUpdates',
+    payload: { timeout: 50, offset: 132851875, allowed_updates: [] }
+  }
+}
+
+Node.js v22.11.0
+Бот запущен!
+(node:40532) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 409: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+    at Telegram.callApi (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async [Symbol.asyncIterator] (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:30:33)
+    at async Polling.loop (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:73:30)
+    at async Telegraf.launch (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/telegraf.js:194:13) {
+  response: {
+    ok: false,
+    error_code: 409,
+    description: 'Conflict: terminated by other getUpdates request; make sure that only one bot instance is running'
+  },
+  on: {
+    method: 'getUpdates',
+    payload: { timeout: 50, offset: 0, allowed_updates: [] }
+  }
+}
+
+Node.js v22.11.0
+Бот запущен!
+(node:40613) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 409: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+    at Telegram.callApi (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async [Symbol.asyncIterator] (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:30:33)
+    at async Polling.loop (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:73:30)
+    at async Telegraf.launch (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/telegraf.js:194:13) {
+  response: {
+    ok: false,
+    error_code: 409,
+    description: 'Conflict: terminated by other getUpdates request; make sure that only one bot instance is running'
+  },
+  on: {
+    method: 'getUpdates',
+    payload: { timeout: 50, offset: 0, allowed_updates: [] }
+  }
+}
+
+Node.js v22.11.0
+Бот запущен!
+(node:40636) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 409: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+    at Telegram.callApi (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async [Symbol.asyncIterator] (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:30:33)
+    at async Polling.loop (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/core/network/polling.js:73:30)
+    at async Telegraf.launch (/Users/georgiiakoev/tg-bot/node_modules/telegraf/lib/telegraf.js:194:13) {
+  response: {
+    ok: false,
+    error_code: 409,
+    description: 'Conflict: terminated by other getUpdates request; make sure that only one bot instance is running'
+  },
+  on: {
+    method: 'getUpdates',
+    payload: { timeout: 50, offset: 0, allowed_updates: [] }
+  }
+}
+
+Node.js v22.11.0
