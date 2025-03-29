@@ -48,29 +48,41 @@ bot.start((ctx) => {
   });
 });
 
-// Начало расчета калорийности
-bot.action('calculate_calories', (ctx) => {
-  ctx.reply('Введи свой возраст (в годах):');
-  ctx.session = { step: 'age' };  // Начинаем с запроса возраста
-});
+// Функция для получения данных пользователя
+async function getUserData(ctx) {
+  // Запрос возраста
+  const age = await askQuestion(ctx, 'Введи свой возраст (в годах):');
+  
+  // Запрос веса
+  const weight = await askQuestion(ctx, 'Введи свой вес (в кг):');
+  
+  // Запрос роста
+  const height = await askQuestion(ctx, 'Введи свой рост (в см):');
+  
+  // Запрос пола
+  const gender = await askGender(ctx);
+  
+  // Запрос уровня активности
+  const activity = await askActivityLevel(ctx);
 
-// Обработка текста
-bot.on('text', (ctx) => {
-  if (ctx.session.step === 'age') {
-    ctx.session.age = ctx.message.text;  // Сохраняем введенный возраст
-    ctx.session.step = 'weight'; // Переходим к следующему шагу
-    ctx.reply('Введи свой вес (в кг):');
-  }
+  return { age, weight, height, gender, activity };
+}
 
-  if (ctx.session.step === 'weight') {
-    ctx.session.weight = ctx.message.text;  // Сохраняем введенный вес
-    ctx.session.step = 'height'; // Переходим к следующему шагу
-    ctx.reply('Введи свой рост (в см):');
-  }
+// Функция для отправки вопроса и получения ответа
+function askQuestion(ctx, question) {
+  return new Promise((resolve) => {
+    ctx.reply(question);
+    bot.on('text', (messageCtx) => {
+      if (messageCtx.chat.id === ctx.chat.id) {
+        resolve(messageCtx.message.text); // Ответ пользователя
+      }
+    });
+  });
+}
 
-  if (ctx.session.step === 'height') {
-    ctx.session.height = ctx.message.text;  // Сохраняем введенный рост
-    ctx.session.step = 'gender'; // Переходим к следующему шагу
+// Функция для выбора пола
+function askGender(ctx) {
+  return new Promise((resolve) => {
     ctx.reply('Выбери свой пол:', {
       reply_markup: {
         inline_keyboard: [
@@ -79,42 +91,56 @@ bot.on('text', (ctx) => {
         ]
       }
     });
-  }
-});
 
-// Выбор пола
-bot.action(['male', 'female'], (ctx) => {
-  ctx.session.gender = ctx.match[0];  // Сохраняем выбранный пол
-  ctx.session.step = 'activity'; // Переходим к следующему шагу
-  ctx.reply('Выбери уровень активности:', {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: 'Низкий', callback_data: 'activity_1' }],
-        [{ text: 'Средний', callback_data: 'activity_2' }],
-        [{ text: 'Высокий', callback_data: 'activity_3' }]
-      ]
-    }
+    bot.action(['male', 'female'], (messageCtx) => {
+      resolve(messageCtx.match[0]); // Выбранный пол
+    });
   });
-});
+}
 
-// Выбор уровня активности
-bot.action(['activity_1', 'activity_2', 'activity_3'], (ctx) => {
-  ctx.session.activity = ctx.match[0];  // Сохраняем выбранный уровень активности
+// Функция для выбора уровня активности
+function askActivityLevel(ctx) {
+  return new Promise((resolve) => {
+    ctx.reply('Выбери уровень активности:', {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Низкий', callback_data: 'activity_1' }],
+          [{ text: 'Средний', callback_data: 'activity_2' }],
+          [{ text: 'Высокий', callback_data: 'activity_3' }]
+        ]
+      }
+    });
 
-  // Рассчитываем калории по упрощенной формуле
-  let bmr = ctx.session.gender === 'male'
-    ? 88.36 + (13.4 * ctx.session.weight) + (4.8 * ctx.session.height) - (5.7 * ctx.session.age)
-    : 447.6 + (9.2 * ctx.session.weight) + (3.1 * ctx.session.height) - (4.3 * ctx.session.age);
+    bot.action(['activity_1', 'activity_2', 'activity_3'], (messageCtx) => {
+      resolve(messageCtx.match[0]); // Выбранный уровень активности
+    });
+  });
+}
 
-  const activityFactors = {
-    activity_1: 1.2,
-    activity_2: 1.375,
-    activity_3: 1.55
-  };
+// Начало расчета калорийности
+bot.action('calculate_calories', async (ctx) => {
+  try {
+    // Получаем все данные пользователя
+    const { age, weight, height, gender, activity } = await getUserData(ctx);
 
-  ctx.session.dailyCalories = Math.round(bmr * activityFactors[ctx.session.activity]);
+    // Рассчитываем калории по упрощенной формуле
+    let bmr = gender === 'male'
+      ? 88.36 + (13.4 * weight) + (4.8 * height) - (5.7 * age)
+      : 447.6 + (9.2 * weight) + (3.1 * height) - (4.3 * age);
 
-  ctx.reply(`Твоя дневная норма калорий: ${ctx.session.dailyCalories} ккал.`, mainMenu);
+    const activityFactors = {
+      activity_1: 1.2,
+      activity_2: 1.375,
+      activity_3: 1.55
+    };
+
+    const dailyCalories = Math.round(bmr * activityFactors[activity]);
+
+    ctx.reply(`Твоя дневная норма калорий: ${dailyCalories} ккал.`, mainMenu);
+  } catch (error) {
+    ctx.reply('Произошла ошибка, попробуй снова.');
+    console.error(error);
+  }
 });
 
 // Обработка кнопки "Дополнительно"
