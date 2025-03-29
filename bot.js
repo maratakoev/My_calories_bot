@@ -1,9 +1,9 @@
 const { Telegraf, session } = require('telegraf');
 
-// Вставьте свой токен напрямую
+// Вставьте свой токен
 const bot = new Telegraf('7616676414:AAED_kQUdF5PPnSWfdCDGeqnWji0TYznNYY');
 
-// Подключаем session middleware для сохранения состояния диалога
+// Подключаем session middleware
 bot.use(session());
 
 // Главное меню
@@ -97,6 +97,7 @@ bot.start((ctx) => {
 
 // Начало расчета калорийности
 bot.action('calculate_calories', (ctx) => {
+  ctx.session.step = 'age'; // Убедитесь, что сессия инициализирована
   askAge(ctx);
 });
 
